@@ -1,22 +1,21 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-from flask import send_from_directory
 import os
-import PyPDF2
 import openai
+import pymupdf4llm
 
 app = Flask(__name__, static_folder="static")
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 print("Starting MedPrepare Flask App...")
-# Configure OpenAI API key
+
+# Load environment variables
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/")
 def serve_index():
     return send_from_directory("static", "index.html")
-
 
 @app.route("/upload", methods=["POST"])
 def upload_pdf():
@@ -26,12 +25,18 @@ def upload_pdf():
     file = request.files["file"]
 
     try:
-        # Read PDF file
-        pdf_reader = PyPDF2.PdfReader(file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        return jsonify({"content": text}), 200
+        # Save the file temporarily to work with it
+        file_path = os.path.join("temp", file.filename)
+        os.makedirs("temp", exist_ok=True)
+        file.save(file_path)
+
+        # Use pymupdf4llm to extract text as markdown
+        md_text = pymupdf4llm.to_markdown(file_path)
+
+        # Clean up temporary file
+        os.remove(file_path)
+
+        return jsonify({"content": md_text}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -75,7 +80,6 @@ def generate_content():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
