@@ -1,0 +1,17 @@
+{
+    "name": "medprepare",
+    "version": "1.0.0",
+    "description": "Web app for medical students",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "keywords": [],
+    "author": "Tom Kelly",
+    "license": "ISC",
+    "dependencies": {
+        "chakra-ui": "^0.3.9",
+        "react": "^16.14.0",
+        "react-dom": "^16.14.0"
+    }
+}
