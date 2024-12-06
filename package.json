@@ -14,4 +14,9 @@
         "react": "^16.14.0",
         "react-dom": "^16.14.0"
     }
+    
+}
+"scripts": {
+  "start": "node index.js",
+  "build": "echo 'No build step for this project'"
 }
