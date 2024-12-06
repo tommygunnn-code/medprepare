@@ -1,85 +1,56 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask
 from flask_cors import CORS
-from dotenv import load_dotenv
-import os
-import openai
-import pymupdf4llm
+from .config import load_config
+from .routes.pdf_routes import pdf_bp
+from .routes.ai_routes import ai_bp
+import logging
 
-app = Flask(__name__, static_folder="static")
-CORS(app)
-print("Starting MedPrepare Flask App...")
+def create_app():
+    """Create and configure the Flask app."""
+    app = Flask(__name__, static_folder="../frontend")
+    CORS(app)  # Enable CORS for all routes
 
-# Load environment variables
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-@app.route("/")
-def serve_index():
-    return send_from_directory("static", "index.html")
-
-@app.route("/upload", methods=["POST"])
-def upload_pdf():
-    if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    file = request.files["file"]
-
+    # Load configuration
     try:
-        # Save the file temporarily to work with it
-        file_path = os.path.join("temp", file.filename)
-        os.makedirs("temp", exist_ok=True)
-        file.save(file_path)
-
-        # Use pymupdf4llm to extract text as markdown
-        md_text = pymupdf4llm.to_markdown(file_path)
-
-        # Clean up temporary file
-        os.remove(file_path)
-
-        return jsonify({"content": md_text}), 200
+        load_config(app)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Failed to load configuration: {e}")
+        raise
 
-@app.route("/generate-content", methods=["POST"])
-def generate_content():
-    data = request.json
-    text = data.get("text", "")
+    # Set up logging
+    setup_logging(app)
 
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
+    # Register blueprints
+    app.register_blueprint(pdf_bp, url_prefix="/pdf")
+    app.register_blueprint(ai_bp, url_prefix="/ai")
 
-    try:
-        # Generate summary
-        summary_response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"Summarize the following text:\n{text}",
-            max_tokens=150
-        )
-        summary = summary_response["choices"][0]["text"].strip()
+    @app.errorhandler(404)
+    def handle_404(error):
+        app.logger.error(f"404 error: {error}")
+        return {"error": "Not found"}, 404
 
-        # Generate flashcards
-        flashcards_response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"Create flashcards from the following text:\n{text}",
-            max_tokens=300
-        )
-        flashcards = flashcards_response["choices"][0]["text"].strip()
+    @app.errorhandler(500)
+    def handle_500(error):
+        app.logger.error(f"500 error: {error}")
+        return {"error": "Internal server error"}, 500
 
-        # Generate quiz
-        quiz_response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"Create a quiz based on the following text:\n{text}",
-            max_tokens=200
-        )
-        quiz = quiz_response["choices"][0]["text"].strip()
+    return app
 
-        return jsonify({
-            "summary": summary,
-            "flashcards": flashcards,
-            "quiz": quiz
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+def setup_logging(app):
+    """Set up logging for the Flask application."""
+    log_level = app.config.get("LOG_LEVEL", logging.INFO)
+    log_format = "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+
+    logging.basicConfig(level=log_level, format=log_format)
+    app.logger.setLevel(log_level)
+
+    app.logger.info("Logging is set up.")
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    try:
+        app = create_app()
+        app.run(debug=app.config.get("DEBUG", True))
+    except Exception as e:
+        logging.critical(f"Failed to start the application: {e}", exc_info=True)
