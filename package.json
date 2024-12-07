@@ -1,22 +1,15 @@
 {
-    "name": "medprepare",
-    "version": "1.0.0",
-    "description": "Web app for medical students",
-    "main": "index.js",
-    "scripts": {
-      "start": "react-scripts start",
-      "build": "react-scripts build"
-    },
-    "keywords": [],
-    "author": "Tom Kelly",
-    "license": "ISC",
-    "dependencies": {
-      "@chakra-ui/react": "^2.7.0",
-      "@emotion/react": "^11.11.0",
-      "@emotion/styled": "^11.11.0",
-      "framer-motion": "^10.12.16",
-      "react": "^18.2.0",
-      "react-dom": "^18.2.0"
-    }
+  "name": "medprepare",
+  "version": "1.0.0",
+  "description": "Web app for medical students",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/styles/tailwind.css -o ./dist/output.css --watch"
+  },
+  "keywords": [],
+  "author": "Tom Kelly",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "tailwindcss": "^3.4.0"
   }
-  
+}
