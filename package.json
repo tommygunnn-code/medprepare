@@ -3,13 +3,10 @@
   "version": "1.0.0",
   "description": "Web app for medical students",
   "scripts": {
-    "build:css": "tailwindcss -i ./src/styles/tailwind.css -o ./dist/output.css --watch"
+    "frontend:dev": "cd frontend && npm run build:css",
+    "install:all": "npm install && cd frontend && npm install"
   },
   "keywords": [],
   "author": "Tom Kelly",
-  "license": "ISC",
-  "devDependencies": {
-    "@tailwindcss/forms": "^0.5.7",
-    "tailwindcss": "^3.4.0"
-  }
+  "license": "ISC"
 }

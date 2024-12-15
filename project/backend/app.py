@@ -1,14 +1,23 @@
 from flask import Flask
 from flask_cors import CORS
-from .config import load_config
-from .routes.pdf_routes import pdf_bp
-from .routes.ai_routes import ai_bp
+from config import load_config
+from routes.pdf_routes import pdf_bp
+from routes.ai_routes import ai_bp
 import logging
 
 def create_app():
     """Create and configure the Flask app."""
     app = Flask(__name__, static_folder="../frontend")
-    CORS(app)  # Enable CORS for all routes
+    
+    # Configure CORS
+    CORS(app, resources={
+        r"/*": {
+            "origins": "*",  # Allow all origins
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Accept"],
+            "expose_headers": ["Content-Type"]
+        }
+    })
 
     # Load configuration
     try:

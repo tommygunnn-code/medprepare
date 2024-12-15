@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from ..services.openai_service import process_with_ai
+from services.openai_service import process_with_ai
 
 ai_bp = Blueprint("ai", __name__)
 

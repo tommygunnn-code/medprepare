@@ -1,14 +1,17 @@
 # backend/routes/pdf_routes.py
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
-from ..services.pdf_processing import extract_pdf_text
+from services.pdf_processing import extract_pdf_text
+from services.openai_service import process_with_ai
 import os
+import json
+import logging
 
 pdf_bp = Blueprint("pdf", __name__)
 
 @pdf_bp.route("/upload", methods=["POST"])
 def upload_pdf():
-    """Handles PDF upload and text extraction."""
+    """Handles PDF upload, text extraction, and AI processing."""
     # Check if file is in request
     if "file" not in request.files:
         current_app.logger.error("No file key found in request.")
@@ -28,11 +31,27 @@ def upload_pdf():
     try:
         # Extract text from the PDF
         current_app.logger.info(f"Processing file: {filename} with pages: {pages_param}")
-        text = extract_pdf_text(file, pages_param)
-
-        # Return extracted text
-        current_app.logger.info(f"Successfully processed file: {filename}")
-        return jsonify({"content": text}), 200
+        extracted_text = extract_pdf_text(file, pages_param)
+        current_app.logger.debug(f"Extracted text: {extracted_text[:500]}...")  # Log first 500 chars
+        
+        # Process the extracted text with OpenAI
+        current_app.logger.info("Processing extracted text with AI...")
+        ai_response = process_with_ai(extracted_text)
+        current_app.logger.info(f"AI Response received: {ai_response}")
+        
+        # Parse the JSON response from OpenAI
+        processed_content = json.loads(ai_response)
+        current_app.logger.info(f"Parsed AI response: {json.dumps(processed_content, indent=2)}")
+        
+        # Return processed content
+        response_data = {
+            "raw_text": extracted_text,
+            "processed_content": processed_content
+        }
+        current_app.logger.info(f"Sending response: {json.dumps(response_data, indent=2)}")
+        
+        return jsonify(response_data), 200
+        
     except ValueError as ve:
         current_app.logger.warning(f"Value error while processing file {filename}: {ve}")
         return jsonify({"error": str(ve)}), 400
